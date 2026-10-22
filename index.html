@@ -1,0 +1,219 @@
+<!DOCTYPE html>
+<html lang="ko"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>시험 통과율 기록</title>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;500;700&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<style>
+:root{--bg:#F3F6F7;--sf:#fff;--ink:#16252D;--mu:#5C6E77;--ln:#D8E0E4;--ac:#0E7C8B;--on:#fff;--gd:#1C7A4B;--wn:#C0392B;--r1:#F4B6AE;--r2:#FFE699;--r3:#C6E7C1;--r4:#E3E3E3;color-scheme:light;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#10171B;--sf:#192329;--ink:#E6EEF1;--mu:#97A9B2;--ln:#2B3A42;--ac:#4FC3D2;--on:#06222A;--gd:#6CCB98;--wn:#F08A72;--r1:#7A3B33;--r2:#6B5A1E;--r3:#2C5A33;--r4:#3A4A52;color-scheme:dark}}
+:root[data-theme="dark"]{--bg:#10171B;--sf:#192329;--ink:#E6EEF1;--mu:#97A9B2;--ln:#2B3A42;--ac:#4FC3D2;--on:#06222A;--gd:#6CCB98;--wn:#F08A72;--r1:#7A3B33;--r2:#6B5A1E;--r3:#2C5A33;--r4:#3A4A52;color-scheme:dark}
+html{scroll-padding-top:env(safe-area-inset-top,0px)}*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--ink);font:17px/1.6 "Noto Sans KR",system-ui,-apple-system,"Apple SD Gothic Neo","Malgun Gothic",sans-serif}
+.w{max-width:1000px;margin:0 auto;padding:20px 14px 60px}h1{font-size:26px;margin:0 0 4px}h2{font-size:20px;margin:0 0 6px}
+.mu{color:var(--mu);font-size:15px}.card{background:var(--sf);border:1px solid var(--ln);border-radius:12px;padding:16px;margin-top:18px}
+.row{display:flex;flex-wrap:wrap;gap:10px;align-items:center;margin-top:10px}
+select,input[type=file]{font:inherit;min-height:48px;padding:6px 12px;border:1px solid var(--ln);background:var(--sf);color:var(--ink);border-radius:10px}
+.seg{display:inline-flex}.seg button{font:inherit;font-weight:500;min-height:48px;padding:6px 22px;border:1px solid var(--ln);background:var(--sf);color:var(--ink);cursor:pointer}
+.seg button:first-child{border-radius:10px 0 0 10px}.seg button:last-child{border-radius:0 10px 10px 0}.seg button+button{border-left:0}
+.seg button[aria-pressed=true]{background:var(--ac);color:var(--on);font-weight:700}
+.chip{font:inherit;font-size:15px;min-height:42px;padding:4px 14px;border:2px solid var(--c);border-radius:999px;background:var(--sf);color:var(--ink);cursor:pointer}
+.chip[aria-pressed=true]{background:var(--c);color:#fff;font-weight:700}
+.bt{font:inherit;min-height:46px;padding:6px 16px;border:1px solid var(--ln);background:var(--sf);color:var(--ink);border-radius:10px;cursor:pointer}
+.tb{overflow-x:auto;border:1px solid var(--ln);border-radius:10px;margin-top:10px}table{border-collapse:collapse;width:100%;font-size:16px}
+th,td{padding:10px 10px;text-align:center;border-bottom:1px solid var(--ln);white-space:nowrap}th{background:var(--bg);color:var(--mu);font-weight:500}
+td:first-child,th:first-child{text-align:left;position:sticky;left:0;background:var(--sf)}th:first-child{background:var(--bg)}tr:last-child td{border-bottom:0}
+tr.cl{cursor:pointer}tr.on td{background:color-mix(in srgb,var(--ac) 14%,var(--sf))}
+.s{display:inline-block;min-width:78px;padding:3px 10px;border-radius:8px;font-weight:700}
+.s1{background:var(--r1)}.s2{background:var(--r2)}.s3{background:var(--r3)}.s4{background:var(--r4)}
+.u{color:var(--gd);font-weight:700}.d{color:var(--wn);font-weight:700}small{font-size:13px}
+.ch{position:relative;height:340px;margin-top:10px}#msg{margin-top:12px;font-size:16px}
+summary{cursor:pointer}summary h2{display:inline;margin:0}details.card[open]>summary{margin-bottom:8px}.sb{font-size:13px;color:var(--mu);opacity:.9;white-space:normal;max-width:300px;line-height:1.35;font-weight:400}td:first-child{white-space:normal;min-width:120px}
+</style></head><body><div class="w">
+<h1>시험 통과율 기록</h1>
+<div class="mu" id="stat">불러오는 중…</div>
+<div class="mu">※ 이 화면의 기록은 <b>이 컴퓨터의 이 브라우저에만</b> 저장돼요. 다른 컴퓨터에서는 파일을 다시 올려야 보여요.</div>
+<div class="mu"><b>본시험 통과율</b> = 첫 시험 통과 ÷ (첫 시험 통과 + 미통과) · 재시험을 본 학생은 첫 시험에서 떨어진 것으로 계산 · 미표시가 들어간 건은 모두 제외 · 첫 시험 결과는 한 번 기록되면 바꾸지 않아요</div>
+
+<details class="card" id="up" hidden><summary><h2>새 성적 파일 올리기</h2></summary>
+<div class="mu">성적조회 엑셀(.xlsx)을 올리면 <b>새로 생긴 시험만</b> 추가돼요. 이미 기록된 첫 시험 결과는 그대로 두고, 재시험을 봤는지(잔여 재시험)만 새로 반영해요. 학생 이름·코드는 저장하지 않아요.</div>
+<div class="row"><span class="mu">이 파일은</span><select id="uty" aria-label="시험 종류"><option>자동 구분</option><option>단어</option><option>문법</option><option>CHAT</option></select><input type="file" id="file" accept=".xlsx,.xls,.csv"><button class="bt" id="lg">업로드 기록 보기</button></div><div id="msg"></div><div id="lgp" hidden></div><div id="res"></div></details>
+
+<div class="card"><h2>무엇을 볼까요?</h2>
+<div class="row"><div class="seg" id="by"><button data-k="3" aria-pressed="true">담임별</button><button data-k="1" aria-pressed="false">레벨별</button><button data-k="4" aria-pressed="false">반별</button></div></div>
+<div class="row"><span class="mu">시험</span><select id="ty" aria-label="시험 종류"><option>단어</option><option>문법</option><option>CHAT</option></select><span class="mu">학년</span><select id="gr"></select><span class="mu">레벨</span><select id="lv"></select><span class="mu">담임</span><select id="tc"></select></div>
+<div class="row"><label><input type="checkbox" id="nae" checked> 내신특강 레벨 포함해서 보기</label></div>
+<div class="mu" style="margin-top:8px">‘레벨’을 고른 뒤 담임별·반별로 보면 같은 레벨끼리 공정하게 비교할 수 있어요. ‘담임’을 고르면 그 담임의 모든 반이 한 번에 나와요.</div></div>
+
+<details class="card" open><summary><h2>한눈에 보기</h2></summary><div id="sum" class="mu"></div>
+<div class="tb"><table id="ov"></table></div>
+<div class="mu" style="margin-top:8px">‘주의’: 지난 회차보다 10%p 이상 하락 또는 전체 평균보다 15%p 이상 낮음 · ‘지켜보기’: 5%p / 7%p · 시험 본 학생 10명 이상인 최근 회차 기준 · 줄을 누르면 비교에 추가돼요.</div></details>
+
+<details class="card" open><summary><h2>회차별 비교</h2></summary>
+<div class="mu">비교하고 싶은 대상을 눌러 고르세요 (여러 개 가능).</div>
+<div class="row" id="chips"></div>
+<div class="row"><button class="bt" id="sall">선택 모두 하기</button><button class="bt" id="clr">선택 모두 지우기</button><button class="bt" id="warn">‘주의’ 대상 모두 선택</button><span class="mu">회차</span><select id="fr"></select>~<select id="to"></select></div>
+<div class="ch"><canvas id="cv"></canvas></div>
+<div class="tb"><table id="cmp"></table></div>
+<div class="mu" style="margin-top:8px">숫자는 통과율(%), ▲▼는 바로 전 시험보다 오르고 내린 폭(%p)이에요. 칸을 길게 누르면 시험 본 학생 수가 보여요.</div></details>
+<details class="card"><summary><h2>잔여 재시험 (회차별)</h2></summary><div class="mu">첫 시험에서 떨어졌고 아직 재시험을 통과하지 못한 학생 수예요. 괄호 안은 시험을 아직 안 본 미응시 학생 수예요. ‘합계’ 줄은 지금 고른 학년·레벨·담임 조건 전체예요.</div><div class="tb"><table id="rem"></table></div></details>
+</div>
+<script>
+const NS=64,MIN_N=10,esc=s=>String(s).replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c])),$=i=>document.getElementById(i);
+function h53(s){let a=0xdeadbeef,b=0x41c6ce57;for(let i=0,c;i<s.length;i++){c=s.charCodeAt(i);a=Math.imul(a^c,2654435761);b=Math.imul(b^c,1597334677)}a=Math.imul(a^(a>>>16),2246822507)^Math.imul(b^(b>>>13),3266489909);b=Math.imul(b^(b>>>16),2246822507)^Math.imul(a^(a>>>13),3266489909);return 4294967296*(2097151&b)+(a>>>0)}
+/* 저장 행: [학년,레벨,요일,담임,반(수강반),회차,첫시험결과(P통과/F미통과/N미응시),시험일자,재시험상태(O남음/A미응시/-없음),업로드번호] — 학생코드는 저장하지 않고 중복 확인용 암호값만 씁니다 */
+let db=null,canWrite=true,MEM=new Map(),CH=null,ME="";const S={nae:true,by:3,gr:"",lv:"",tc:"",ty:"단어",sel:new Set(),from:0,to:0,auto:true,pick:false};
+const tyOf=r=>r[10]||"단어";
+async function init(){
+  /* GitHub 버전: 기록은 이 브라우저(localStorage)에 저장합니다. 나중에 DB로 바꿀 때는 아래 db 객체(collection/doc의 get/set)만 교체하세요. */
+  const LS="pr3_";db={collection:c=>({get:async()=>({docs:Object.keys(localStorage).filter(k=>k.startsWith(LS+c+"/")).map(k=>({data:()=>JSON.parse(localStorage.getItem(k))}))})}),doc:p=>({get:async()=>{const v=localStorage.getItem(LS+p);return{exists:v!=null,data:()=>JSON.parse(v)}},set:async o=>localStorage.setItem(LS+p,JSON.stringify(o))})};
+  ME=""; /* 로그인 기능에 연결할 때 올린 사람 이름을 ME에 넣으세요 */
+  $("up").hidden=!canWrite;
+  if(db){try{const qs=await retry(()=>db.collection("shards3").get(),4);qs.docs.forEach(d=>{const r=(d.data()||{}).rows||{};for(const k in r)MEM.set(k,r[k])})}catch(e){$("stat").textContent="저장소 읽기 실패: "+(e.message||e.code)}try{const sn=await db.doc("meta3/log").get();LOG=sn.exists?(sn.data().items||[]):[]}catch(e){}}
+  setup()}
+const TYC=["시험종류","시험유형","유형","과목","종류","시험구분","교재명","단원명"];
+/* 파일 안의 시험구분·교재명·단원명 글자로 종류를 구분합니다. 표시가 없으면 단어로 넣습니다. 구분 기준이 달라지면 이 함수만 고치세요. */
+function detect(r){const x=TYC.map(k=>r[k]??"").join(" ");
+  if(/문법|grammar/i.test(x))return["문법",1];if(/chat/i.test(x))return["CHAT",1];return["단어",/단어|voca|vocab|어휘|v-map/i.test(x)?1:0]}
+const sleep=ms=>new Promise(r=>setTimeout(r,ms));
+async function retry(fn,n=5){for(let i=0;;i++){try{return await fn()}catch(e){if(i>=n-1)throw e;await sleep(500*2**i)}}}
+function cls(a,p,ty){
+  if(p==="미표시")return"x";
+  if(a==="응시"&&p==="통과")return["P","-"];if(a==="응시"&&p==="미통과")return["F","O"];
+  if(a==="재시험"&&p==="통과")return["F","-"];if(a==="재시험"&&p==="미통과")return["F",ty==="문법"?"W":"O"];
+  if(a==="미응시"&&p==="미응시")return["N","A"];return null}
+async function upload(file){
+  const m=$("msg");m.textContent="읽는 중…";
+  try{
+    const wb=XLSX.read(await file.arrayBuffer()),rows=XLSX.utils.sheet_to_json(wb.Sheets[wb.SheetNames[0]],{defval:"",raw:false,dateNF:"yyyy-mm-dd"});
+    const need=["학생코드","수강반","레벨","수업요일","담임선생님","학년구분","회차","시험구분","교재명","단원명","시험일자","응시","통과"];
+    if(!rows.length||need.some(c=>!(c in rows[0]))){m.textContent="열 이름이 맞지 않아요. 필요한 열: "+need.join(", ");return}
+    const t=v=>String(v??"").trim(),ch={},sid={},nw=[],bid=Date.now().toString(36),who=ME||"(이름 없음)",ov=$("uty").value,tc={};let skip=0,mp=0,upd=0,rt=0,fa=0,dflt=0;
+    for(const r of rows){
+      const a=t(r["응시"]),p=t(r["통과"]),dt=ov!=="자동 구분"?[ov,1]:detect(r),ty=dt[0],c=cls(a,p,ty);
+      if(c==="x"){mp++;continue}if(!c){skip++;continue}tc[ty]=(tc[ty]||0)+1;if(!dt[1])dflt++;
+      const [res,cu]=c,h=h53(["학생코드","수강반","회차","시험구분","교재명","단원명"].map(k=>t(r[k])).join("|")+(ty==="단어"?"":"|"+ty)),id=h.toString(36),old=ch[id]||MEM.get(id),d=a==="응시"?t(r["시험일자"]):"";
+      const row=[t(r["학년구분"]),t(r["레벨"]),t(r["수업요일"]),t(r["담임선생님"]),t(r["수강반"]),+r["회차"],res,d,cu,bid,ty];sid[id]="s"+(h%NS);
+      if(!old){ch[id]=row;if(res==="N")fa++;else{nw.push(row);if(a==="재시험")rt++}continue}
+      if(res==="N"&&old[6]!=="N")continue;
+      const u=old.slice();let g=false;
+      if(old[6]==="N"&&res!=="N"){u[6]=res;u[7]=d||u[7];g=true;nw.push(u)}
+      if(u[8]!==cu){u[8]=cu;g=true}
+      if(g){ch[id]=u;upd++}
+    }
+    const sh={};for(const id in ch)(sh[sid[id]]=sh[sid[id]]||{})[id]=ch[id];
+    const ks=Object.keys(sh);let done=0,fail=null;
+    for(const k of ks){
+      if(db){try{await retry(async()=>{const sn=await db.doc("shards3/"+k).get(),cur={...((sn.exists&&sn.data().rows)||{}),...sh[k]};await db.doc("shards3/"+k).set({rows:cur})})}catch(e){fail=fail||e;continue}}
+      for(const id in sh[k])MEM.set(id,sh[k][id]);done++;m.textContent=`저장 중… ${done}/${ks.length}`;await sleep(40)}
+    if(done&&Object.keys(ch).length){LOG.push({b:bid,t:Date.now(),u:who,f:file.name,n:nw.length,p:upd});await saveLog()}
+    if(fail){m.textContent=`저장소가 잠시 응답하지 않아 ${done}/${ks.length}구간만 저장됐어요. 잠시 뒤 같은 파일을 다시 올려주세요. 이미 저장된 건은 중복되지 않고 나머지만 이어서 저장돼요. (${fail.message||fail.code||fail})`;setup();return}
+    const by={};nw.forEach(r=>{const o=by[r[5]]=by[r[5]]||{n:0,p:0,d:[]};o.n++;if(r[6]==="P")o.p++;o.d.push(r[7])});
+    m.textContent="";
+    const tb=nw.length?`<div class="tb"><table><tr><th>회차</th><th>시험일</th><th>시험 본 학생</th><th>본시험 통과율</th></tr>${Object.keys(by).sort((a,b)=>a-b).map(k=>{const o=by[k],d=o.d.filter(Boolean).sort();return `<tr><td>${k}회차</td><td>${d.length?d[0]+(d[d.length-1]!==d[0]?" ~ "+d[d.length-1]:""):"-"}</td><td>${o.n}명</td><td><b>${(o.p/o.n*100).toFixed(1)}%</b></td></tr>`}).join("")}</table></div>`:"";
+    $("res").innerHTML=`<button class="bt" id="rh">통과율에 새로 들어간 시험 ${nw.length}건 ▲ 숨기기</button><div id="rb"><div class="mu" style="margin-top:8px">종류별 ${Object.keys(tc).map(k=>k+" "+tc[k]+"건").join(" · ")} (종류 표시가 없어 단어로 넣은 건 ${dflt}건) · 재시험 학생 ${rt}건은 첫 시험 미통과로 계산 · 재시험 진행 상태 갱신 ${upd}건 · 미응시 새로 기록 ${fa}건 · 계산에서 뺀 건(미표시 등) ${mp+skip}건</div>${tb}${db?"":"<div>※ 저장소에 연결되지 않아 이 화면을 닫으면 사라져요.</div>"}</div>`;
+    $("rh").onclick=()=>{const b=$("rb");b.hidden=!b.hidden;$("rh").textContent=`통과율에 새로 들어간 시험 ${nw.length}건 `+(b.hidden?"▼ 보기":"▲ 숨기기")};
+    setup()
+  }catch(e){m.textContent="올리기에 실패했어요: "+(e.message||e.code||e)}}
+
+const rate=a=>a&&a[0]?a[1]/a[0]*100:null,fm=v=>v==null?"-":v.toFixed(1)+"%",NM={3:"담임",1:"레벨",4:"반"};
+const isN=r=>/내신/.test(r[1]);
+const rowsB=()=>[...MEM.values()].filter(r=>tyOf(r)===S.ty&&(S.nae||!isN(r))&&(!S.gr||r[0]===S.gr)&&(!S.lv||r[1]===S.lv));
+/* 그룹별·회차별 [시험 본 수, 통과 수, 잔여 재시험(O), 미응시(A)] */
+function agg(rows){const m=new Map(),all={};const add=(o,r)=>{const x=o[r[5]]=o[r[5]]||[0,0,0,0,0];if(r[6]!=="N"){x[0]++;if(r[6]==="P")x[1]++}if(r[8]==="O")x[2]++;if(r[8]==="A")x[3]++;if(r[8]==="W")x[4]++};
+  rows.forEach(r=>{const g=r[S.by];let o=m.get(g);if(!o)m.set(g,o={});add(o,r);add(all,r)});return{m,all}}
+function ctx(){const rb=rowsB(),rg=S.tc?rb.filter(r=>r[3]===S.tc):rb,a=agg(rg);const nb=rb.filter(r=>!isN(r));return{rg,m:a.m,pool:a.all,bench:agg(S.lv&&/내신/.test(S.lv)?rb:nb).all}}
+const resid=o=>{let O=0,A=0,W=0;for(const k in o){O+=o[k][2];A+=o[k][3];W+=o[k][4]}return[O,A,W]};
+function subs(rg){const s=new Map();rg.forEach(r=>{const g=r[S.by];let o=s.get(g);if(!o)s.set(g,o={c:new Set(),t:new Set(),l:new Set(),d:new Set()});o.c.add(r[4]);o.t.add(r[3]);o.l.add(r[1]);o.d.add(r[2])});
+  return g=>{const o=s.get(g);if(!o)return"";const c=[...o.c];
+    if(S.by===3)return c.length+"개 반: "+(c.length>3?c.slice(0,3).join(" · ")+" 외 "+(c.length-3)+"개":c.join(" · "));
+    if(S.by===1)return"담임 "+[...o.t].join(", ")+" · "+c.length+"개 반";
+    return[...o.t].join(", ")+" · "+[...o.l].join(",")+" · "+[...o.d].join(",")}}
+function stat(o,all){const rs=Object.keys(o).map(Number).filter(r=>o[r][0]>=MIN_N).sort((a,b)=>a-b);if(!rs.length)return{st:"자료 적음",k:4};
+  const L=rs[rs.length-1],P=rs[rs.length-2],rl=rate(o[L]),chg=P!=null?rl-rate(o[P]):null,gap=rl-rate(all[L]);
+  const st=(chg!=null&&chg<=-10)||gap<=-15?"주의":(chg!=null&&chg<=-5)||gap<=-7?"지켜보기":"양호";return{L,rl,chg,gap,st,k:{주의:1,지켜보기:2,양호:3}[st]}}
+const ar=d=>d==null?"":d>0.05?`<span class="u">▲${d.toFixed(1)}</span>`:d<-0.05?`<span class="d">▼${(-d).toFixed(1)}</span>`:"<span class='mu'>–</span>";
+const col=(g,names)=>`hsl(${(names.indexOf(g)*137.5)%360} 62% ${matchMedia("(prefers-color-scheme: dark)").matches?64:40}%)`;
+function setup(){
+  if(!setup.d){setup.d=1;$("up").open=!MEM.size}
+  const all=[...MEM.values()].filter(r=>tyOf(r)===S.ty&&(S.nae||!isN(r))),rd=[...new Set(all.map(r=>r[5]))].sort((a,b)=>a-b),ds=all.map(r=>r[7]).filter(Boolean).sort();
+  $("stat").textContent=all.length?`기록된 ${S.ty} 시험 ${all.filter(r=>r[6]!=="N").length.toLocaleString()}건 · ${rd[0]}~${rd[rd.length-1]}회차 · 마지막 시험일 ${ds[ds.length-1]||"-"}`:"아직 "+S.ty+" 시험 기록이 없어요. 위에서 성적 파일을 올려주세요.";
+  const op=(id,first,vals,cur)=>{$(id).innerHTML=`<option value="">${first}</option>`+vals.map(v=>`<option>${esc(v)}</option>`).join("");$(id).value=cur};
+  op("gr","전체 학년",[...new Set(all.map(r=>r[0]))].filter(Boolean).sort(),S.gr);if(S.lv&&!all.some(r=>r[1]===S.lv&&(!S.gr||r[0]===S.gr)))S.lv="";op("lv","전체 레벨",[...new Set(all.filter(r=>!S.gr||r[0]===S.gr).map(r=>r[1]))].sort((a,b)=>a.localeCompare(b,"ko",{numeric:true})),S.lv);
+  op("tc","전체 담임",[...new Set(all.map(r=>r[3]))].filter(Boolean).sort((a,b)=>a.localeCompare(b,"ko")),S.tc);
+  $("ty").value=S.ty;
+  const ro=rd.map(r=>`<option value="${r}">${r}회차</option>`).join("");$("fr").innerHTML=$("to").innerHTML=ro;
+  if(!rd.includes(S.from))S.from=rd[0];if(!rd.includes(S.to))S.to=rd[rd.length-1];$("fr").value=S.from;$("to").value=S.to;render();renderLog()}
+function render(){
+  const gW=S.ty==="문법",{rg,m,pool,bench}=ctx(),sub=subs(rg),names=[...m.keys()].sort((a,b)=>String(a).localeCompare(String(b),"ko",{numeric:true}));
+  const info=new Map(names.map(g=>[g,stat(m.get(g),bench)]));
+  if(S.pick&&names.length)names.forEach(g=>S.sel.add(g));else if(S.auto&&names.length&&!S.sel.size)names.slice().sort((a,b)=>info.get(a).k-info.get(b).k).slice(0,3).forEach(g=>S.sel.add(g));
+  S.pick=false;S.auto=false;[...S.sel].forEach(g=>{if(!m.has(g))S.sel.delete(g)});
+  const cnt=k=>names.filter(g=>info.get(g).st===k).length,[RO,RA,RW]=resid(pool),fl=S.gr||S.lv||S.tc;
+  $("sum").innerHTML=names.length?`<b>주의 ${cnt("주의")}</b> · 지켜보기 ${cnt("지켜보기")} · 양호 ${cnt("양호")} · 자료 적음 ${cnt("자료 적음")}<br>잔여 재시험 ${fl?"(고른 조건)":"(전체)"} 합계 <b>${RO+RA}건</b> = 응시 미통과 ${RO}건 + 미응시 ${RA}건${gW?`<br>오답노트 완료 <b>${RW}건</b> <span class="mu">(재시험까지 봤지만 통과하지 못한 건 · 잔여 재시험에서는 뺐어요)</span>`:""}`:"";
+  const sb=g=>sub(g)?`<div class="sb">${esc(sub(g))}</div>`:"";
+  const ord=names.slice().sort((a,b)=>info.get(a).k-info.get(b).k||(info.get(a).gap??0)-(info.get(b).gap??0));
+  $("ov").innerHTML=`<tr><th>${NM[S.by]}</th><th>최근 회차</th><th>최근 통과율</th><th>지난 회차보다</th><th>전체 평균과 차이</th><th>상태</th><th>잔여 재시험<br><small>(미응시)</small></th>${gW?"<th>오답노트<br>완료</th>":""}</tr>`+ord.map(g=>{const i=info.get(g),[o,a,w]=resid(m.get(g));
+    return `<tr class="cl ${S.sel.has(g)?"on":""}" data-g="${esc(g)}"><td>${S.sel.has(g)?"☑":"☐"} ${esc(g)}${sb(g)}</td><td>${i.L?i.L+"회차":"-"}</td><td><b>${fm(i.rl)}</b></td><td>${ar(i.chg)}</td><td>${i.gap==null?"":ar(i.gap)}</td><td><span class="s s${i.k}">${i.st}</span></td><td><b>${o}건</b> <small class="mu">(${a})</small></td>${gW?`<td><b>${w}건</b></td>`:""}</tr>`}).join("");
+  $("chips").innerHTML=names.map(g=>`<button class="chip" style="--c:${col(g,names)}" aria-pressed="${S.sel.has(g)}" data-g="${esc(g)}">${esc(g)}</button>`).join("");
+  const rd=[...new Set(rg.map(r=>r[5]))].sort((a,b)=>a-b).filter(r=>r>=S.from&&r<=S.to),sel=names.filter(g=>S.sel.has(g));
+  const dk=matchMedia("(prefers-color-scheme: dark)").matches;
+  const series=sel.map(g=>({label:g,c:col(g,names),o:m.get(g),sub:sub(g)}));
+  if(S.tc)series.push({label:S.tc+" 전체",c:dk?"#E6EEF1":"#16252D",o:pool,w:5});
+  series.push({label:"전체 평균",c:"#9A9A9A",o:bench,dash:true});
+  if(CH)CH.destroy();const st=getComputedStyle(document.documentElement),mu=st.getPropertyValue("--mu").trim(),ln=st.getPropertyValue("--ln").trim();
+  Chart.defaults.color=mu;Chart.defaults.font.family='"Noto Sans KR",sans-serif';Chart.defaults.font.size=14;
+  CH=new Chart($("cv"),{type:"line",data:{labels:rd.map(r=>r+"회"),datasets:series.map(x=>({label:x.label,data:rd.map(r=>rate(x.o[r])),ns:rd.map(r=>x.o[r]?x.o[r][0]:0),borderColor:x.c,backgroundColor:x.c,borderWidth:x.dash?2:(x.w||3.5),borderDash:x.dash?[6,5]:[],pointRadius:x.dash?0:4.5,tension:.2,spanGaps:true}))},
+    options:{responsive:true,maintainAspectRatio:false,interaction:{mode:"nearest",intersect:false},plugins:{legend:{position:"bottom",labels:{boxWidth:14,font:{size:14}}},tooltip:{callbacks:{label:c=>`${c.dataset.label}: ${c.parsed.y.toFixed(1)}% (${c.dataset.ns[c.dataIndex]}명)`}}},scales:{y:{suggestedMax:100,grid:{color:ln},ticks:{callback:v=>v+"%"}},x:{grid:{display:false}}}}});
+  const nm=x=>`<td>${esc(x.label)}${x.sub?`<div class="sb">${esc(x.sub)}</div>`:""}</td>`;
+  $("cmp").innerHTML=`<tr><th>대상</th>${rd.map(r=>`<th>${r}회</th>`).join("")}</tr>`+series.map(x=>`<tr>${nm(x)}${rd.map((r,j)=>{
+    const v=rate(x.o[r]);if(v==null)return "<td></td>";let p=null;for(let k=j-1;k>=0;k--){const y=rate(x.o[rd[k]]);if(y!=null){p=y;break}}
+    return `<td title="시험 본 학생 ${x.o[r][0]}명">${v.toFixed(0)}% <small>${ar(p==null?null:v-p)}</small></td>`}).join("")}</tr>`).join("");
+  const rr=sel.map(g=>({label:g,o:m.get(g),sub:sub(g)})).concat([{label:"합계 (고른 조건 전체)",o:pool}]);
+  $("rem").innerHTML=`<tr><th>대상</th>${rd.map(r=>`<th>${r}회</th>`).join("")}<th>합계</th></tr>`+rr.map(x=>{let T=0,U=0,V=0;return `<tr>${nm(x)}${rd.map(r=>{const y=x.o[r];if(y){T+=y[2];U+=y[3];V+=y[4]}return !y||(!y[2]&&!y[3]&&!(gW&&y[4]))?"<td class='mu'>·</td>":`<td>${y[2]}${y[3]?` <small class="mu">(${y[3]})</small>`:""}${gW&&y[4]?` <small class="mu">· 오답노트 ${y[4]}</small>`:""}</td>`}).join("")}<td><b>${T}</b> <small class="mu">(${U})</small>${gW?` <small class="mu">· 오답노트 ${V}</small>`:""}</td></tr>`}).join("");
+}
+const tog=g=>{S.sel.has(g)?S.sel.delete(g):S.sel.add(g);render()};
+$("ov").onclick=e=>{const t=e.target.closest("tr.cl");if(t)tog(t.dataset.g)};$("chips").onclick=e=>{const b=e.target.closest(".chip");if(b)tog(b.dataset.g)};
+$("sall").onclick=()=>{const{m}=ctx();[...m.keys()].forEach(g=>S.sel.add(g));render()};
+$("clr").onclick=()=>{S.sel.clear();render()};
+$("warn").onclick=()=>{const{m,bench}=ctx();S.sel.clear();[...m.keys()].forEach(g=>{if(stat(m.get(g),bench).st==="주의")S.sel.add(g)});render()};
+$("by").onclick=e=>{const b=e.target.closest("button");if(!b)return;S.by=+b.dataset.k;S.sel.clear();S.auto=true;[...$("by").children].forEach(x=>x.setAttribute("aria-pressed",x===b));render()};
+$("gr").onchange=e=>{S.gr=e.target.value;S.lv="";S.sel.clear();S.auto=true;setup()};$("lv").onchange=e=>{S.lv=e.target.value;S.sel.clear();S.auto=true;render()};
+$("tc").onchange=e=>{S.tc=e.target.value;S.sel.clear();if(S.tc){S.by=4;S.pick=true;[...$("by").children].forEach(x=>x.setAttribute("aria-pressed",x.dataset.k==="4"))}else S.auto=true;render()};
+$("nae").onchange=e=>{S.nae=e.target.checked;S.sel.clear();S.auto=true;S.lv=S.lv&&/내신/.test(S.lv)&&!S.nae?"":S.lv;setup()};
+$("fr").onchange=e=>{S.from=+e.target.value;if(S.from>S.to){S.to=S.from;$("to").value=S.to}render()};$("to").onchange=e=>{S.to=+e.target.value;if(S.to<S.from){S.from=S.to;$("fr").value=S.from}render()};
+$("ty").onchange=e=>{S.ty=e.target.value;S.sel.clear();S.auto=true;S.gr=S.lv=S.tc="";S.from=S.to=0;setup()};
+$("file").onchange=e=>{if(e.target.files[0])upload(e.target.files[0]);e.target.value=""};
+try{matchMedia("(prefers-color-scheme: dark)").addEventListener("change",render)}catch(e){}
+/* ---- 업로드 기록 (누가·언제 올렸는지, 업로드별 삭제) ---- */
+let LOG=[],cfm=null;
+async function saveLog(){if(db){try{await retry(()=>db.doc("meta3/log").set({items:LOG}),4)}catch(e){}}}
+const shOf=id=>{let v=0;for(const c of id)v=v*36+parseInt(c,36);return "s"+(v%NS)};
+let BUSY=null,PRG="";
+async function delRows(pred,prog){
+  const del=[];MEM.forEach((r,id)=>{if(pred(r))del.push(id)});
+  if(db){const by={};del.forEach(id=>(by[shOf(id)]=by[shOf(id)]||[]).push(id));
+    const ks=Object.keys(by);let i=0;for(const k of ks){await retry(async()=>{const sn=await db.doc("shards3/"+k).get(),cur={...((sn.exists&&sn.data().rows)||{})};by[k].forEach(id=>delete cur[id]);await db.doc("shards3/"+k).set({rows:cur})});i++;if(prog)prog(i,ks.length)}}
+  del.forEach(id=>MEM.delete(id));return del.length}
+function logItems(){
+  const g=new Map();let leg=0;
+  MEM.forEach(r=>{if(!r[9]){leg++;return}let o=g.get(r[9]);if(!o)g.set(r[9],o={n:0,rd:new Set(),d:[],y:new Set()});o.n++;o.y.add(tyOf(r));o.rd.add(r[5]);if(r[7])o.d.push(r[7])});
+  const info=new Map(LOG.map(x=>[x.b,x]));
+  return{leg,items:[...g].map(([b,o])=>{const x=info.get(b)||{};return{b,t:x.t||parseInt(b,36),u:x.u||"(기록 없음)",f:x.f||"",y:[...o.y].join("·"),n:o.n,p:x.p,rd:[...o.rd].sort((p,q)=>p-q),d:o.d.sort()}}).sort((a,b)=>b.t-a.t)}}
+function renderLog(){
+  const box=$("lgp");if(box.hidden)return;const{items,leg}=logItems();
+  const rg=x=>x.rd.length?x.rd[0]+(x.rd.length>1?"~"+x.rd[x.rd.length-1]:"")+"회차":"-",dt=x=>x.d.length?x.d[0]+(x.d[x.d.length-1]!==x.d[0]?" ~ "+x.d[x.d.length-1]:""):"-";
+  const act=k=>BUSY===k?`<span class="mu"><b>삭제 중…</b> ${PRG} 창을 닫지 마세요</span>`:BUSY?`<span class="mu">잠시만요</span>`:cfm===k?`<span class="mu">정말 지울까요?</span> <button class="bt" data-y="${k}">삭제하기</button> <button class="bt" data-n="1">취소</button>`:`<button class="bt" data-d="${k}">삭제</button>`;
+  const rows=items.map(x=>`<tr><td>${new Date(x.t).toLocaleString("ko-KR")}</td><td>${esc(x.u)}</td><td>${esc(x.y)}</td><td>${esc(x.f)||"-"}</td><td>${x.n}건${x.p?`<br><small class="mu">재시험 상태 갱신 ${x.p}건</small>`:""}</td><td>${rg(x)}<br><small class="mu">${dt(x)}</small></td><td>${act(x.b)}</td></tr>`).join("")
+   +(leg?`<tr><td>이전 업로드</td><td>(기록 없음)</td><td>단어</td><td>-</td><td>${leg}건</td><td class="mu">구분할 수 없어요</td><td>${act("LEG")}</td></tr>`:"");
+  box.innerHTML=rows?`<div class="tb"><table><tr><th>올린 때</th><th>올린 사람</th><th>시험</th><th>파일</th><th>새로 들어온 기록</th><th>회차 · 시험일</th><th></th></tr>${rows}</table></div><div class="mu" style="margin-top:8px">삭제하면 그 업로드로 새로 들어온 기록만 지워져요. 되살릴 수 없어요.</div>`:"<div class='mu' style='margin-top:8px'>저장된 기록이 없어요.</div>"}
+$("lg").onclick=()=>{const b=$("lgp");b.hidden=!b.hidden;$("lg").textContent=b.hidden?"업로드 기록 보기":"업로드 기록 닫기";cfm=null;renderLog()};
+$("lgp").onclick=async e=>{const t=e.target.closest("button");if(!t)return;
+  if(t.dataset.d){cfm=t.dataset.d;renderLog();return}if(t.dataset.n){cfm=null;renderLog();return}
+  if(BUSY)return;if(t.dataset.y){const k=t.dataset.y;cfm=null;BUSY=k;PRG="준비 중";$("msg").textContent="삭제 중… 잠시만 기다려 주세요";renderLog();
+    try{const n=await delRows(r=>k==="LEG"?!r[9]:r[9]===k,(i,n)=>{PRG=`${i}/${n}`;$("msg").textContent=`삭제 중… ${PRG}`;renderLog()});if(k!=="LEG"){LOG=LOG.filter(x=>x.b!==k);await saveLog()}$("msg").textContent=n+"건을 삭제했어요.";BUSY=null;setup()}
+    catch(err){BUSY=null;$("msg").textContent="삭제에 실패했어요: "+(err.message||err.code||err)}BUSY=null;renderLog()}};
+
+init();
+</script></body></html>
